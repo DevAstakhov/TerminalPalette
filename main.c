@@ -47,10 +47,9 @@ struct Form {
     int selected_color_pair;
 
     enum Selected {
-        Intense,
-        FgBg,
-        Color,
-        RGB
+        Color = 0,
+        RGB,
+        Intensity
     } selected;
 
 } form;
@@ -135,7 +134,10 @@ void draw_rgb(WINDOW* w) {
         default: intensity = 0;
     }
 
-    mvwprintw(rgb_win, 1, 2, "intensity:      %4d", intensity);
+    if (form.selected == Intensity)
+        mvwprintw(rgb_win, 1, 2, "intensity:    [%4d]", intensity);
+    else
+        mvwprintw(rgb_win, 1, 2, "intensity:     %4d ", intensity);
 
     delwin(rgb_win);
 }
@@ -222,8 +224,12 @@ int main(int argc, char* argv[]) {
 
     init();
 
-    for (short color = 0; color < 16; ++color)
+    for (short color = 0; color < 16; ++color) {
+        short r, g, b;
+        color_content(color, &r, &g, &b);
+        init_color(color, r, g, b);
         init_pair(color+1, COLOR_WHITE, color);
+    }
     
     init_pair(17, form.selected_color_fg, form.selected_color_bg);
 
@@ -245,26 +251,62 @@ int main(int argc, char* argv[]) {
                 keepGoing = false;
                 break;
             case KEY_RIGHT:
-                if (form.selected == RGB)
+                if (form.selected == RGB) {
                     form.color_component.color = form.color_component.color < 3 ? form.color_component.color + 1 : form.color_component.color;
+                }
                 if (form.selected == Color) {
                     int *selected = form.color_type.type == Foreground ? &form.selected_color_fg : &form.selected_color_bg;
                     *selected = *selected < 7 ? *selected + 1 : *selected;
+                }
+                if (form.selected == Intensity) {
+                    enum Status s = form.color_type.type == Foreground ? form.intense.status_fg : form.intense.status_bg;
+                    const int intense_bit = s == Enabled && COLORS > 8 ? 0b00001000 : 0b00000000;
+                    short color = (form.color_type.type == Foreground ? form.selected_color_fg : form.selected_color_bg) | intense_bit;
+
+                    short r,g,b;
+                    color_content(color, &r, &g, &b);
+
+                    switch (form.color_component.color) {
+                        case Red: r = r < 1000 ? r + 10 : r; break;
+                        case Green: g = g < 1000 ? g + 10 : g; break;
+                        case Blue: b = b < 1000 ? b + 10 : b; break;
+                        default: ;
                     }
+
+                    init_color(color, r, g, b);
+                }
                 break;
             case KEY_LEFT:
-                if (form.selected == RGB)
+                if (form.selected == RGB) {
                     form.color_component.color = form.color_component.color > 1 ? form.color_component.color - 1 : form.color_component.color;
+                }
                 if (form.selected == Color) {
                     int *selected = form.color_type.type == Foreground ? &form.selected_color_fg : &form.selected_color_bg;
                     *selected = *selected > 0 ? *selected - 1 : *selected;
+                }
+                if (form.selected == Intensity) {
+                    enum Status s = form.color_type.type == Foreground ? form.intense.status_fg : form.intense.status_bg;
+                    const int intense_bit = s == Enabled && COLORS > 8 ? 0b00001000 : 0b00000000;
+                    short color = (form.color_type.type == Foreground ? form.selected_color_fg : form.selected_color_bg) | intense_bit;
+
+                    short r,g,b;
+                    color_content(color, &r, &g, &b);
+
+                    switch (form.color_component.color) {
+                        case Red: r = r >= 10 ? r-10 : r; break;
+                        case Green: g = g >= 10 ? g-10 : g; break;
+                        case Blue: b = b >= 10 ? b-10 : b; break;
+                        default: ;
                     }
+
+                    init_color(color, r, g, b);
+                }
                 break;
             case KEY_UP:
                 form.selected = form.selected > 0 ? form.selected - 1 : form.selected;
                 break;
             case KEY_DOWN:
-                form.selected = form.selected < 4 ? form.selected + 1 : form.selected;
+                form.selected = form.selected < 2 ? form.selected + 1 : form.selected;
                 break;
             case 9:
                 form.color_type.type = form.color_type.type == Foreground ? Background : Foreground;
