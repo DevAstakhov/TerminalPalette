@@ -251,6 +251,11 @@ void init_colors() {
 
 int main(int argc, char* argv[]) {
 
+    if (argc == 2 && !strncmp(argv[1], "--version", 9)) {
+        printf("%s\n", VERSION);
+        return 0;
+    }
+
     initscr();
     cbreak();
     noecho();
