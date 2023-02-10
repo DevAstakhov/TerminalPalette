@@ -25,19 +25,19 @@ struct Form {
 enum HDir { Left, Right };
 enum VDir { Up, Down };
 
-struct BgFg get_default(int bg_fg) {
-    struct BgFg bgfg = { Normal, bg_fg, 3 };
+struct BgFg get_default(int bg_fg, short color_index) {
+    struct BgFg bgfg = { Normal, bg_fg, color_index };
     return bgfg;
 }
 
 void init_form() {
-    form.bg = get_default(Background);
-    form.fg = get_default(Foreground);
+    form.bg = get_default(Background, COLOR_BLACK);
+    form.fg = get_default(Foreground, COLOR_WHITE);
 
     form.active = Background;
     form.focus = Color;
-    form.selected_rgb = Red;
-    form.sample_text.text = "Lorem ipsum";
+    form.selected_rgb = Green;
+    form.sample_text.text = "Lorem ipsum dolor sitamet, consectetur ...";
     form.sample_text.color_pair = 17;
 }
 
